@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card shadow-lg">
+    <div class="card-header bg-dark text-white">
+        <h2 class="red-title">Résultats de l'analyse</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h4>Résumé</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Longueur du texte:</strong> {{ results.text_length }} mots
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Similarité maximale:</strong> 
+                                <span class="badge bg-{{ 'danger' if results.overall_similarity > 0.7 else 'warning' if results.overall_similarity > 0.3 else 'success' }}">
+                                    {{ "%.2f"|format(results.overall_similarity * 100) }}%
+                                </span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Analyse IA:</strong> 
+                                <span class="badge bg-{{ 'danger' if results.ai_analysis.overall_verdict == 'Probablement IA' else 'warning' if results.ai_analysis.overall_verdict == 'Incertain' else 'success' }}">
+                                    {{ results.ai_analysis.overall_verdict }} ({{ "%.2f"|format(results.ai_analysis.average_score * 100) }}%)
+                                </span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Date d'analyse:</strong> {{ results.processed_at }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h4>Détection IA</h4>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="aiChart" height="200"></canvas>
+                        <div class="mt-3">
+                            {% for segment in results.ai_analysis.segments %}
+                            <div class="mb-2">
+                                <small>{{ segment.verdict }} ({{ "%.0f"|format(segment.ai_score * 100) }}%)</small>
+                                <div class="progress">
+                                    <div class="progress-bar bg-{{ 'danger' if segment.ai_score > 0.7 else 'warning' if segment.ai_score > 0.3 else 'success' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ segment.ai_score * 100 }}%">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h4>Similarité Globale</h4>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="similarityChart" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h4>Sources Potentielles</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for match in results.local_matches %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Document local: {{ match.title }}</h5>
+                                    <span class="badge bg-danger rounded-pill">{{ "%.2f"|format(match.similarity * 100) }}%</span>
+                                </div>
+                                <p class="mb-1">Auteur: {{ match.author }}</p>
+                                <small>Correspondance trouvée dans {{ match.matched_sections|length }} sections</small>
+                            </div>
+                            {% endfor %}
+                            
+                            {% for match in results.external_matches %}
+                            <a href="{{ match.url }}" target="_blank" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ match.title }}</h5>
+                                    <span class="badge bg-danger rounded-pill">{{ "%.2f"|format(match.similarity * 100) }}%</span>
+                                </div>
+                                <small>{{ match.url }}</small>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a href="{{ url_for('generate_report', doc_id=results.doc_id) }}" class="btn btn-danger">
+                Générer un rapport complet
+            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary ms-2">
+                Nouvelle analyse
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Chart for AI detection
+    const aiCtx = document.getElementById('aiChart').getContext('2d');
+    const aiChart = new Chart(aiCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Probablement Humain', 'Probablement IA', 'Incertain'],
+            datasets: [{
+                data: [
+                    {{ results.ai_analysis.segments|selectattr('verdict', 'equalto', 'Probablement humain')|list|length }},
+                    {{ results.ai_analysis.segments|selectattr('verdict', 'equalto', 'Probablement IA')|list|length }},
+                    {{ results.ai_analysis.segments|selectattr('verdict', 'equalto', 'Incertain')|list|length }}
+                ],
+                backgroundColor: [
+                    '#28a745',
+                    '#dc3545',
+                    '#ffc107'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Répartition des segments par origine'
+                }
+            }
+        }
+    });
+    
+    // Chart for similarity
+    const simCtx = document.getElementById('similarityChart').getContext('2d');
+    const simChart = new Chart(simCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Base locale', 'Web'],
+            datasets: [{
+                label: 'Similarité maximale trouvée',
+                data: [
+                    {{ (results.local_matches|map(attribute='similarity')|max or 0) * 100 }},
+                    {{ (results.external_matches|map(attribute='similarity')|max or 0) * 100 }}
+                ],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.7)',
+                    'rgba(220, 53, 69, 0.7)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Pourcentage de similarité'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

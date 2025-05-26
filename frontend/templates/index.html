@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card shadow-lg">
+    {# Ajouter la classe text-center ici pour centrer le contenu du header #}
+    <div class="card-header bg-dark text-white text-center">
+        {# Changer le titre principal #}
+        <h2 class="red-title">PlagiaScope</h2>
+    </div>
+    <div class="card-body">
+        {# Formulaire de soumission #}
+        <form action="{{ url_for('analyze') }}" method="post" enctype="multipart/form-data" class="mb-4">
+            <div class="mb-3">
+                <label for="fileInput" class="form-label">Ou téléchargez un fichier (PDF ou TXT)</label>
+                <input class="form-control" type="file" id="fileInput" name="file" accept=".pdf,.txt">
+            </div>
+            <div class="mb-3">
+                <label for="textInput" class="form-label">Ou collez votre texte ici</label>
+                <textarea class="form-control" id="textInput" name="text" rows="10"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="titleInput" class="form-label">Titre (Optionnel)</label>
+                <input type="text" class="form-control" id="titleInput" name="title">
+            </div>
+             <div class="mb-3">
+                <label for="authorInput" class="form-label">Auteur (Optionnel)</label>
+                <input type="text" class="form-control" id="authorInput" name="author">
+            </div>
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-search"></i> Lancer l'analyse
+            </button>
+        </form>
+
+        {# Nous supprimons la section "Résultats de l'analyse" qui était ici #}
+        {# <hr> #}
+        {# <h2 class="red-title mt-4">Résultats de l'analyse</h2> #}
+        {# ... tout le contenu de la section résultats ... #}
+        {# </div> #}
+        {# </div> #}
+        {# ... fin de la section résultats ... #}
+
+        {# Nous supprimons le bouton "Nouvelle analyse" de la page d'accueil initiale #}
+        {# <div class="mt-4 text-center"> #}
+        {#      <a href="{{ url_for('index') }}" class="btn btn-primary ms-2"> #}
+        {#         <i class="bi bi-arrow-repeat"></i> Nouvelle analyse #}
+        {#     </a> #}
+        {# </div> #}
+
+        {# Ajouter les noms des réalisateurs en bas #}
+        <div class="mt-4 text-center">
+            <small class="red-title">FILALI ANSARI MERYEM & OULKIASS SALMA</small>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Chart.js configuration - Ces scripts ne sont plus nécessaires sur index.html
+    // car les graphiques sont sur report.html
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     // AI Detection Chart
+    //     // ... code du graphique AI ...
+    //     // Similarity Chart
+    //     // ... code du graphique Similarity ...
+    // });
+</script>
+
+<style>
+    .text-preview {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 10px;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    .segments-analysis {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .sources-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}

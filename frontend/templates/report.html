@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card shadow-lg animate-results">
+    <div class="card-header bg-dark text-white">
+        <div class="d-flex justify-content-between align-items-center">\
+            <h2 class="red-title mb-0">Rapport complet de plagiat</h2>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-light">Nouvelle analyse</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h4 class="red-title">Document analysé</h4>
+                <p><strong>Titre:</strong> {{ document.title }}</p>
+                <p><strong>Auteur:</strong> {{ document.author or 'Non spécifié' }}</p>
+                <p><strong>Date d'ajout:</strong> {{ document.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+            <div class="col-md-6">
+                <h4 class="red-title">Statistiques</h4>
+                <p><strong>Nombre de comparaisons:</strong> {{ comparisons|length }}</p>
+                <p>
+                    <strong>Similarité la plus élevée:</strong>
+                    {% if comparisons %} {# <-- Ajouter cette condition #}
+                    <span class="badge bg-{{ 'danger' if comparisons[0].similarity_score > 70 else 'warning' if comparisons[0].similarity_score > 30 else 'success' }}">
+                        {{ comparisons[0].similarity_score }}%
+                    </span>
+                    {% else %} {# <-- Ajouter ce bloc else #}
+                    <span class="badge bg-info">Aucune correspondance</span>
+                    {% endif %} {# <-- Fermer la condition #}
+                </p>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h4 class="red-title">Visualisation des similarités</h4>
+            {# Ajouter une condition pour afficher le graphique uniquement s'il y a des comparaisons #}
+            {% if comparisons %}
+            <canvas id="comparisonChart" height="100"></canvas>
+            {% else %}
+            <div class="alert alert-info">Aucune donnée de similarité à afficher.</div>
+            {% endif %}
+        </div>
+
+        <div class="mb-4">
+            <h4 class="red-title">Détails des correspondances</h4>
+
+            <div class="accordion" id="matchesAccordion">
+                {% for comp in comparisons %}
+                <div class="accordion-item bg-dark text-white">
+                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                        <button class="accordion-button collapsed bg-secondary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
+                            <div class="d-flex justify-content-between w-100">
+                                <span>
+                                    {% if comp.compared_doc_id %}
+                                    Document local #{{ comp.compared_doc_id }}
+                                    {% else %}
+                                    Source externe: {{ comp.compared_url|truncate(50) }}
+                                    {% endif %}
+                                </span>
+                                <span class="badge similarity-badge bg-{{ 'danger' if comp.similarity_score > 70 else 'warning' if comp.similarity_score > 30 else 'success' }}">
+                                    {{ comp.similarity_score }}%
+                                </span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#matchesAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Détails de la correspondance</h5>
+                                    <p><strong>Méthode de détection:</strong> {{ comp.detection_method }}</p>
+                                    <p><strong>Date de détection:</strong> {{ comp.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    <p><strong>Contenu généré par IA:</strong>
+                                        {% if comp.is_ai_generated == 1 %}
+                                        <span class="badge bg-danger">Probablement Oui</span>
+                                        {% elif comp.is_ai_generated == 0 %}
+                                        <span class="badge bg-success">Probablement Non</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Incertain</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Sections correspondantes</h5>
+                                    {# Utiliser matched_sections_parsed qui est déjà une liste #}
+                                    {% if comp.matched_sections_parsed %}
+                                    <button type="button" class="btn btn-sm btn-outline-light mb-2" data-bs-toggle="modal" data-bs-target="#sectionsModal{{ loop.index }}">
+                                        Voir les sections similaires
+                                    </button>
+                                    {% else %}
+                                    <p>Aucune section spécifique identifiée</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal pour les sections correspondantes -->
+                {# Utiliser matched_sections_parsed qui est déjà une liste #}
+                {% if comp.matched_sections_parsed %}
+                <div class="modal fade" id="sectionsModal{{ loop.index }}" tabindex="-1" aria-labelledby="sectionsModalLabel{{ loop.index }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content bg-dark text-white">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="sectionsModalLabel{{ loop.index }}">Sections similaires</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Dans votre document</h6>
+                                        <div class="matched-sections">
+                                            {# Itérer directement sur matched_sections_parsed #}
+                                            {% for section in comp.matched_sections_parsed %}
+                                            <p class="bg-dark p-2 border border-secondary rounded">
+                                                <small>{{ section.source_sentence }}</small>
+                                            </p>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Dans le document comparé</h6>
+                                        <div class="matched-sections">
+                                            {# Itérer directement sur matched_sections_parsed #}
+                                            {% for section in comp.matched_sections_parsed %}
+                                            <p class="bg-dark p-2 border border-secondary rounded">
+                                                <small>{{ section.matched_sentence }}</small>
+                                            </p>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Fermer</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            {# Ajouter un message si aucune correspondance n'est trouvée #}
+            {% if not comparisons %}
+            <div class="alert alert-info">Aucune correspondance trouvée pour ce document.</div>
+            {% endif %}
+        </div>
+
+        <div class="text-center mt-4">
+            <button onclick="window.print()" class="btn btn-danger me-2">
+                <i class="bi bi-printer-fill"></i> Imprimer le rapport
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-light">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Graphique des comparaisons
+    // Exécuter le script Chart.js uniquement s'il y a des comparaisons
+    {% if comparisons %}
+    const ctx = document.getElementById('comparisonChart').getContext('2d');
+    // Utiliser les variables chart_labels et chart_data passées depuis Flask
+    const labels = {{ chart_labels | tojson }};
+    const data = {{ chart_data | tojson }};
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels.map(label => label || 'URL externe'),
+            datasets: [{
+                label: 'Pourcentage de similarité',
+                data: data,
+                backgroundColor: data.map(score =>
+                    score > 70 ? 'rgba(220, 53, 69, 0.7)' :
+                    score > 30 ? 'rgba(255, 193, 7, 0.7)' : 'rgba(40, 167, 69, 0.7)'),
+                borderColor: data.map(score =>
+                    score > 70 ? 'rgba(220, 53, 69, 1)' :
+                    score > 30 ? 'rgba(255, 193, 7, 1)' : 'rgba(40, 167, 69, 1)'),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Pourcentage de similarité'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Documents comparés'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Similarité: ${context.raw}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %} {# <-- Fermer la condition pour le script Chart.js #}
+</script>
+{% endblock %}
