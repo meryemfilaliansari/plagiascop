@@ -1,51 +1,61 @@
-import re
-import hashlib
-from nltk.tokenize import sent_tokenize, word_tokenize
-from nltk.corpus import stopwords
-from nltk.stem import SnowballStemmer
-import nltk
+"""
+Module pour le prétraitement général du texte.
 
-nltk.download('punkt')
-nltk.download('stopwords')
+Contient des fonctions utilitaires pour nettoyer et préparer le texte
+avant l'analyse.
+"""
+
+# Import NLTK components (if not already imported in SimilarityAnalyzer)
+# import nltk
+# from nltk.corpus import stopwords
+# from nltk.tokenize import word_tokenize, sent_tokenize
+# import string
+
+# Ensure NLTK data is downloaded (should be handled by setup.py)
+# try:
+#     nltk.data.find('tokenizers/punkt')
+# except nltk.downloader.DownloadError:
+#     nltk.download('punkt')
+# try:
+#     nltk.data.find('corpora/stopwords')
+# except nltk.downloader.DownloadError:
+#     nltk.download('stopwords')
+
+# Get French stopwords (if not already defined in SimilarityAnalyzer)
+# stop_words_fr = set(stopwords.words('french'))
+
 
 class TextProcessor:
+    """
+    Fournit des méthodes pour le prétraitement général du texte.
+
+    Note: Certaines fonctions de prétraitement (comme la tokenisation et
+    la suppression des stopwords) sont également présentes dans SimilarityAnalyzer
+    car elles sont spécifiques aux calculs de similarité. Ce module peut
+    contenir d'autres types de prétraitement si nécessaire.
+    """
     def __init__(self):
-        self.stop_words = set(stopwords.words('french'))
-        self.stemmer = SnowballStemmer('french')
+        """
+        Initialise le processeur de texte.
+        """
+        pass # Aucune initialisation spécifique nécessaire pour l'instant
 
-    def preprocess_text(self, text):
-        """Nettoyage et prétraitement du texte"""
-        # Convertir en minuscules
-        text = text.lower()
-        # Supprimer les caractères spéciaux et les nombres
-        text = re.sub(r'[^a-zéèêëàâäôöûüç\s]', '', text)
-        # Supprimer les espaces multiples
-        text = re.sub(r'\s+', ' ', text).strip()
-        return text
+    def clean_text(self, text: str) -> str:
+        """
+        Effectue un nettoyage de base du texte (ex: suppression des espaces multiples).
 
-    def tokenize_and_stem(self, text):
-        """Tokenisation et stemming"""
-        words = word_tokenize(text)
-        filtered_words = [self.stemmer.stem(w) for w in words if w not in self.stop_words]
-        return filtered_words
+        Args:
+            text (str): Le texte d'entrée.
 
-    def calculate_text_hash(self, text):
-        """Calculer un hash unique pour le texte"""
-        processed_text = self.preprocess_text(text)
-        return hashlib.sha256(processed_text.encode('utf-8')).hexdigest()
+        Returns:
+            str: Le texte nettoyé.
+        """
+        if not text:
+            return ""
+        # Remplace les espaces multiples, tabulations et retours chariot par un seul espace
+        cleaned_text = re.sub(r'\s+', ' ', text).strip()
+        return cleaned_text
 
-    def extract_key_phrases(self, text, num_phrases=5):
-        """Extraire des phrases clés pour la recherche"""
-        sentences = sent_tokenize(text)
-        # Simple méthode basée sur la longueur et les mots clés
-        scored_sentences = []
-        for sent in sentences:
-            words = [w for w in word_tokenize(sent.lower()) if w.isalpha()]
-            score = len(words) * 0.5  # Poids pour la longueur
-            if any(kw in words for kw in ['définir', 'conclusion', 'résultat', 'méthode']):
-                score += 2  # Bonus pour les mots clés académiques
-            scored_sentences.append((score, sent))
-        
-        # Trier par score et retourner les meilleures
-        scored_sentences.sort(reverse=True, key=lambda x: x[0])
-        return [s[1] for s in scored_sentences[:num_phrases]]
+    # D'autres méthodes de prétraitement peuvent être ajoutées ici si nécessaire
+    # (ex: suppression de caractères spéciaux, normalisation, etc.)
+

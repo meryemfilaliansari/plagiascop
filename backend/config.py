@@ -1,25 +1,38 @@
+"""
+Module de configuration pour l'application PlagiaScope.
+
+Définit les chemins des répertoires pour les données, le cache et la base de données,
+ainsi que le nom du modèle de détection IA à utiliser.
+"""
+
 import os
-from pathlib import Path
 
 class Config:
-    # Chemins de base
-    BASE_DIR = Path(__file__).parent.parent
-    DATABASE_PATH = os.path.join(BASE_DIR, "plagiarism_db.sqlite")
-    CACHE_DIR = os.path.join(BASE_DIR, "cache")
-    
-    # Paramètres de recherche
-    EXTERNAL_SEARCH_TIMEOUT = 30  # secondes
-    SIMILARITY_THRESHOLD = 0.7  # 70% de similarité considéré comme plagiat
+    """
+    Classe de configuration contenant les chemins et paramètres globaux.
+    """
+    # Chemin absolu du répertoire de base du projet (un niveau au-dessus du répertoire backend)
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    # Chemin du répertoire pour stocker les données (base de données, etc.)
+    DATA_DIR = os.path.join(BASE_DIR, 'data')
+    # Chemin du répertoire pour le cache (fichiers téléchargés temporairement)
+    CACHE_DIR = os.path.join(DATA_DIR, 'cache')
+    # Chemin du répertoire pour la base de données
+    DATABASE_DIR = os.path.join(DATA_DIR, 'database')
+    # Chemin complet du fichier de base de données SQLite
+    DATABASE_PATH = os.path.join(DATABASE_DIR, 'plagiarism_db.sqlite')
+    # Nom du modèle de détection IA à utiliser (nom du modèle Hugging Face)
     AI_DETECTION_MODEL = "roberta-base-openai-detector"
-    
-    # Paramètres Selenium
-    CHROME_DRIVER_PATH = os.path.join(BASE_DIR, "chromedriver.exe")
-    CHROME_HEADLESS = True
-    
+
+
     @staticmethod
     def init_dirs():
-        """Initialise les répertoires nécessaires"""
+        """
+        Initialise les répertoires nécessaires (DATA_DIR, CACHE_DIR, DATABASE_DIR)
+        si ils n'existent pas.
+        """
+        os.makedirs(Config.DATA_DIR, exist_ok=True)
         os.makedirs(Config.CACHE_DIR, exist_ok=True)
-        db_dir = os.path.dirname(Config.DATABASE_PATH)
-        if db_dir:
-            os.makedirs(db_dir, exist_ok=True)
+        os.makedirs(Config.DATABASE_DIR, exist_ok=True)
+        print(f"Répertoires initialisés: {Config.DATA_DIR}, {Config.CACHE_DIR}, {Config.DATABASE_DIR}")
+

@@ -1,77 +1,175 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from nltk.tokenize import sent_tokenize
-import numpy as np
-import hashlib
+"""
+Module pour les métriques de similarité et l'analyse de texte.
+
+Contient la classe SimilarityAnalyzer pour prétraiter le texte,
+calculer la similarité et identifier les sections correspondantes.
+"""
+
 import re
-from collections import defaultdict
-from difflib import SequenceMatcher
+import string
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize, sent_tokenize
+
+# Ensure NLTK data is downloaded (should be handled by setup.py)
+try:
+    nltk.data.find('tokenizers/punkt')
+except nltk.downloader.DownloadError:
+    print("Téléchargement de 'punkt' pour SimilarityAnalyzer...")
+    nltk.download('punkt')
+except LookupError:
+     print("Téléchargement de 'punkt' pour SimilarityAnalyzer...")
+     nltk.download('punkt')
+
+try:
+    nltk.data.find('corpora/stopwords')
+except nltk.downloader.DownloadError:
+    print("Téléchargement de 'stopwords' pour SimilarityAnalyzer...")
+    nltk.download('stopwords')
+except LookupError:
+     print("Téléchargement de 'stopwords' pour SimilarityAnalyzer...")
+     nltk.download('stopwords')
+
+
+# Get French stopwords
+stop_words_fr = set(stopwords.words('french'))
+
 
 class SimilarityAnalyzer:
+    """
+    Analyseur de similarité pour comparer des textes.
+
+    Fournit des méthodes pour prétraiter le texte, calculer la similarité,
+    et trouver les sections correspondantes.
+    """
     def __init__(self):
-        self.vectorizer = TfidfVectorizer(stop_words='english')
-        def sent_tokenize(self, text):
-            """Tokenize le texte en phrases en utilisant NLTK"""
-            return sent_tokenize(text)
-    
-    def calculate_cosine_similarity(self, text1, text2):
-        """Calcule la similarité cosinus entre deux textes"""
-        tfidf = self.vectorizer.fit_transform([text1, text2])
-        return cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0]
-    
-    def find_matched_sections(self, text1, text2, threshold=0.7):
-        """Trouve les sections similaires entre deux textes"""
-        sentences1 = sent_tokenize(text1)
-        sentences2 = sent_tokenize(text2)
-        
-        matched_sections = []
-        for i, s1 in enumerate(sentences1):
-            for j, s2 in enumerate(sentences2):
-                similarity = self.calculate_cosine_similarity(s1, s2)
-                if similarity >= threshold:
-                    matched_sections.append({
-                        'source_sentence': s1,
-                        'matched_sentence': s2,
-                        'similarity': similarity,
-                        'source_position': i,
-                        'matched_position': j
-                    })
-        
-        return matched_sections
-    
-    def fingerprint_algorithm(self, text, k=5):
-        """Implémentation de l'algorithme de fingerprint pour détection de copie"""
-        words = re.findall(r'\w+', text.lower())
-        fingerprints = set()
-        
-        for i in range(len(words) - k + 1):
-            kgram = ' '.join(words[i:i+k])
-            hash_val = hashlib.md5(kgram.encode()).hexdigest()
-            fingerprints.add(hash_val)
-        
-        return fingerprints
-    
-    def fingerprint_similarity(self, text1, text2):
-        """Calcule la similarité basée sur les fingerprints"""
-        fp1 = self.fingerprint_algorithm(text1)
-        fp2 = self.fingerprint_algorithm(text2)
-        
-        if not fp1 or not fp2:
-            return 0.0
-        
-        intersection = fp1 & fp2
-        union = fp1 | fp2
-        return len(intersection) / len(union)
-    
-    def sequence_matcher_ratio(self, text1, text2):
-        """Utilise difflib.SequenceMatcher pour une comparaison précise"""
-        return SequenceMatcher(None, text1, text2).ratio()
-    
+        """
+        Initialise le SimilarityAnalyzer.
+        """
+        # Les stopwords et le stemmer peuvent être initialisés ici si nécessaire
+        # self.stop_words = set(stopwords.words('french'))
+        # self.stemmer = SnowballStemmer('french') # Si vous utilisez le stemming
+
+    def split_into_sentences(self, text):
+        """
+        Divise un texte en une liste de phrases.
+
+        Utilise NLTK pour une segmentation de phrases plus précise en français.
+
+        Args:
+            text (str): Le texte d'entrée à diviser.
+
+        Returns:
+            list[str]: Une liste de phrases extraites du texte.
+        """
+        if not text:
+            return []
+        # Utilise NLTK pour une meilleure segmentation de phrases
+        return sent_tokenize(text, language='french')
+
+    def preprocess_text(self, text):
+        """
+        Nettoie et tokenise le texte (minuscules, suppression ponctuation/stopwords).
+
+        Args:
+            text (str): Le texte d'entrée.
+
+        Returns:
+            list[str]: Liste des tokens prétraités.
+        """
+        if not text:
+            return []
+        # Convertir en minuscules
+        text = text.lower()
+        # Supprimer la ponctuation
+        text = text.translate(str.maketrans('', '', string.punctuation))
+        # Tokenisation
+        tokens = word_tokenize(text, language='french')
+        # Suppression des mots vides (stopwords)
+        tokens = [word for word in tokens if word not in stop_words_fr]
+        # Optionnel: ajouter le stemming ici si nécessaire
+        # tokens = [self.stemmer.stem(w) for w in tokens]
+        return tokens
+
+    def jaccard_similarity(self, set1, set2):
+        """
+        Calcule la similarité de Jaccard entre deux ensembles de tokens.
+
+        La similarité de Jaccard est le rapport de la taille de l'intersection
+        sur la taille de l'union des deux ensembles.
+
+        Args:
+            set1 (set): Premier ensemble de tokens.
+            set2 (set): Deuxième ensemble de tokens.
+
+        Returns:
+            float: Score de similarité de Jaccard (0.0 à 1.0). Retourne 0 si l'union est vide.
+        """
+        if not set1 and not set2:
+            return 1.0 # Deux ensembles vides sont considérés comme identiques
+        intersection = len(set1.intersection(set2))
+        union = len(set1.union(set2))
+        return intersection / union if union != 0 else 0.0
+
     def combined_similarity(self, text1, text2):
-        """Combinaison de plusieurs méthodes pour une évaluation robuste"""
-        cosine = self.calculate_cosine_similarity(text1, text2)
-        fingerprint = self.fingerprint_similarity(text1, text2)
-        sequence = self.sequence_matcher_ratio(text1, text2)
-        
-        # Poids personnalisés pour chaque méthode
-        return 0.5 * cosine + 0.3 * fingerprint + 0.2 * sequence
+        """
+        Calcule un score de similarité globale entre deux textes.
+
+        Utilise la similarité de Jaccard sur les tokens prétraités.
+
+        Args:
+            text1 (str): Premier texte.
+            text2 (str): Deuxième texte.
+
+        Returns:
+            float: Score de similarité (0.0 à 1.0).
+        """
+        print("DEBUG: Real combined_similarity called.")
+        tokens1 = set(self.preprocess_text(text1))
+        tokens2 = set(self.preprocess_text(text2))
+        score = self.jaccard_similarity(tokens1, tokens2)
+        print(f"DEBUG: Calculated similarity score: {score}")
+        return score
+
+    def find_matched_sections(self, text1, text2, sentence_similarity_threshold=0.5):
+        """
+        Trouve les sections (phrases) similaires entre deux textes.
+
+        Compare chaque phrase du premier texte avec chaque phrase du deuxième texte
+        en utilisant la similarité de Jaccard sur les tokens prétraités.
+
+        Args:
+            text1 (str): Premier texte (généralement le texte soumis).
+            text2 (str): Deuxième texte (le document comparé).
+            sentence_similarity_threshold (float): Seuil de similarité (0.0 à 1.0)
+                                                   pour considérer deux phrases comme similaires.
+
+        Returns:
+            list[dict]: Liste de dictionnaires décrivant les sections correspondantes trouvées.
+                        Chaque dict contient 'source_sentence' (phrase du texte1)
+                        et 'matched_sentence' (phrase du texte2).
+        """
+        print("DEBUG: Real find_matched_sections called.")
+        sentences1 = self.split_into_sentences(text1)
+        sentences2 = self.split_into_sentences(text2)
+        matched_sections = []
+
+        # Simple comparaison phrase par phrase
+        for sent1 in sentences1:
+            sent1_tokens = set(self.preprocess_text(sent1))
+            for sent2 in sentences2:
+                sent2_tokens = set(self.preprocess_text(sent2))
+                # Calcule la similarité entre les phrases
+                sim_score = self.jaccard_similarity(sent1_tokens, sent2_tokens)
+
+                if sim_score > sentence_similarity_threshold: # Si la similarité dépasse le seuil
+                    matched_sections.append({
+                        "source_sentence": sent1,
+                        "matched_sentence": sent2,
+                        "similarity": sim_score # Optionnel: inclure le score de similarité de la phrase
+                    })
+                    # Optionnel: arrêter après la première correspondance pour chaque phrase de text1
+                    # break
+
+        print(f"DEBUG: Found {len(matched_sections)} matched sections.")
+        return matched_sections

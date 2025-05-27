@@ -2,7 +2,7 @@
 
 ## Système Avancé de Détection de Plagiat et d'Analyse de Contenu Généré par IA
 
-![PlagiaScope Logo Placeholder](docs/images/logo_placeholder.png) <!-- Si vous avez un logo, mettez son chemin ici -->
+
 
 ## Table des Matières
 
@@ -93,12 +93,12 @@ Ouvrez votre terminal ou invite de commande et exécutez la commande suivante po
 git clone <https://github.com/meryemfilaliansari/PlagiaScope>
 cd plagiarism_detector
 
-
+```
 
 Environnement Virtuel
 Il est fortement recommandé de créer un environnement virtuel pour isoler les dépendances du projet :
 
-bash
+```bash
 
 
 # Créer l'environnement virtuel
@@ -111,68 +111,64 @@ venv\Scripts\activate
 
 # Sur macOS ou Linux:
 source venv/bin/activate
-
+```
 Une fois activé, le nom de l'environnement virtuel (venv) apparaîtra au début de votre ligne de commande.
 
 Installation des Dépendances
 Avec l'environnement virtuel activé, installez toutes les bibliothèques Python requises en utilisant pip :
 
-bash
+```bash
 
 
 pip install -r requirements.txt
+```
 Exécution du Script de Configuration
 Exécutez le script setup.py pour télécharger les données NLTK nécessaires (pour le traitement du langage naturel) et initialiser la base de données SQLite :
 
-bash
+```bash
 
 
 python setup.py
+```
 Ce script affichera des messages indiquant la progression du téléchargement de NLTK et la création de la base de données. Il tentera également de vérifier/installer Chromedriver, bien que son succès dépende de votre configuration Chrome/Selenium.
 
 Configuration de l'API SerpApi
 Le projet utilise SerpApi pour la recherche web. Vous devez insérer votre clé API dans le code :
 
-Ouvrez le fichier backend/detection/external_search.py.
-Trouvez la ligne suivante dans la méthode __init__ de la classe ExternalSearch :
-python
-
-
-self.serpapi_key = "093836651908e694df57e88e2a65f0ba73349c5848550cef06e906bac673b5b1"
-Remplacez "093836651908e694df57e88e2a65f0ba73349c5848550cef06e906bac673b5b1" par votre propre clé API SerpApi.
-Sauvegardez le fichier.
-Configuration des Seuils de Détection IA
+*  **Ouvrez le fichier backend/detection/external_search.py.**
+*  **Trouvez la ligne suivante dans la méthode __init__ de la classe ExternalSearch :self.serpapi_key = "093836651908e694df57e88e2a65f0ba73349c5848550cef06e906bac673b5b1"**
+*  **Remplacez "093836651908e694df57e88e2a65f0ba73349c5848550cef06e906bac673b5b1" par votre propre clé API SerpApi.**
+*  **Sauvegardez le fichier.**
+  Configuration des Seuils de Détection IA
 Vous pouvez ajuster la sensibilité de la détection IA en modifiant les seuils dans backend/app.py :
 
-Ouvrez le fichier backend/app.py.
-Trouvez la section d'initialisation des composants.
-Localisez la ligne où ai_detector est initialisé :
-python
+*  **Ouvrez le fichier backend/app.py.**
+*  **Trouvez la section d'initialisation des composants.**
+   *  **Localisez la ligne où ai_detector est initialisé : ai_detector = AIDetector(ai_threshold=0.95, uncertain_threshold=0.70)**
 
-
-ai_detector = AIDetector(ai_threshold=0.95, uncertain_threshold=0.70) # Exemple avec seuils ajustés
-Modifiez les valeurs ai_threshold et uncertain_threshold selon la sensibilité souhaitée. Des valeurs plus élevées rendent le verdict "Probablement IA" moins fréquent.
-Sauvegardez le fichier.
-Vérification de Chromedriver (si nécessaire)
+*  **Modifiez les valeurs ai_threshold et uncertain_threshold selon la sensibilité souhaitée. Des valeurs plus élevées rendent le verdict "Probablement IA" moins fréquent.**
+* **Sauvegardez le fichier.**
+* **Vérification de Chromedriver (si nécessaire)**
 Si vous prévoyez d'utiliser Selenium pour scraper le contenu des pages web (ce qui n'est pas entièrement implémenté dans la version actuelle mais pourrait l'être), ou si vous rencontrez des erreurs liées à Selenium, vous pourriez avoir besoin de configurer Chromedriver manuellement :
 
-Vérifiez la version de votre navigateur Google Chrome.
-Téléchargez la version correspondante de Chromedriver depuis https://chromedriver.chromium.org/downloads.
-Extrayez le fichier chromedriver.exe (ou chromedriver) dans un dossier de votre choix.
-Ouvrez backend/detection/external_search.py.
-Trouvez la ligne self.chromedriver_path = r"C:\Users\merye\OneDrive\Bureau\plagiarism_detector\chromedriver.exe" dans la méthode __init__ de ExternalSearch.
-Remplacez le chemin par le chemin complet vers votre fichier chromedriver.exe.
-Sauvegardez le fichier.
-5. Exécution de l'Application
+* **Vérifiez la version de votre navigateur Google Chrome.**
+* **Téléchargez la version correspondante de Chromedriver depuis https://chromedriver.chromium.org/downloads.**
+* **Extrayez le fichier chromedriver.exe (ou chromedriver) dans un dossier de votre choix.**
+* **Ouvrez backend/detection/external_search.py.**
+* **Trouvez la ligne self.chromedriver_path = r"C:\Users\merye\OneDrive\Bureau\plagiarism_detector\chromedriver.exe" dans la méthode __init__ de ExternalSearch.**
+* **Remplacez le chemin par le chemin complet vers votre fichier chromedriver.exe.**
+* **Sauvegardez le fichier.**
+## 5. Exécution de l'Application
 Une fois toutes les étapes de configuration terminées et votre environnement virtuel activé, démarrez l'application Flask en exécutant :
 
-bash
+```bash
 
 
 python main.py
+```
 Le serveur de développement Flask démarrera. Vous verrez des messages dans votre terminal indiquant les adresses locales où l'application est accessible (généralement http://127.0.0.1:5000/ et une adresse IP locale comme http://192.168.1.137:5000/).
 
-6. Utilisation de l'Interface Web
+## 6. Utilisation de l'Interface Web
 Ouvrez votre navigateur web et accédez à l'une des adresses fournies par le serveur Flask (par exemple, http://127.0.0.1:5000/).
 
 Page d'Accueil
@@ -194,7 +190,8 @@ Détails des Correspondances : Une liste déroulante (accordéon) pour chaque so
 Pour chaque correspondance, vous verrez la source, le score de similarité, la méthode de détection (locale/externe), la date de détection et le verdict IA pour cette correspondance.
 Si des sections correspondantes ont été identifiées, un bouton "Voir les sections similaires" apparaîtra, ouvrant une modale affichant les passages similaires dans le document original et la source.
 Boutons d'Action : Boutons pour générer un rapport imprimable et pour lancer une nouvelle analyse (retour à la page d'accueil).
-7. Structure du Projet
+## 7. Structure du Projet
+```python
 plagiarism_detector/
 ├── backend/
 │   ├── __init__.py
@@ -228,14 +225,15 @@ plagiarism_detector/
 ├── requirements.txt        # Liste des dépendances Python
 ├── setup.py                # Script de configuration initiale
 └── README.md               # Ce fichier
-8. Base de Données Locale
+```
+## 8. Base de Données Locale
 La base de données locale est un fichier SQLite nommé plagiarism_db.sqlite créé à la racine du projet (ou dans le répertoire spécifié par Config.DATA_DIR). Elle contient deux tables principales :
 
 documents : Stocke les informations et le contenu des documents analysés.
 comparison_results : Stocke les résultats de chaque comparaison effectuée (score, source, sections correspondantes, verdict IA par correspondance).
 Cette base de données est automatiquement créée et gérée par SQLAlchemy via le script setup.py et la logique dans backend/database/.
 
-9. Améliorations Possibles
+## 9. Améliorations Possibles
 Amélioration des Algorithmes de Similarité : Remplacer les implémentations basiques de SimilarityAnalyzer par des méthodes plus avancées (TF-IDF, Cosine Similarity, N-grams, Embeddings) pour une détection plus précise.
 Scraping de Contenu Web : Implémenter la récupération du contenu complet des URLs obtenues via SerpApi pour une comparaison plus approfondie que les simples snippets.
 Surlignage Interactif : Surligner les sections plagiées directement dans le texte original affiché sur la page de rapport.
@@ -244,9 +242,7 @@ Support de Formats de Fichiers Supplémentaires : Ajouter la prise en charge d'a
 Rapports Exportables : Améliorer la fonctionnalité d'exportation de rapport (par exemple, en PDF structuré).
 Interface de Gestion des Documents Locaux : Permettre aux utilisateurs de visualiser, supprimer ou organiser les documents stockés dans la base de données locale.
 Amélioration de la Détection IA : Explorer d'autres modèles, ajuster les seuils de manière dynamique, ou fournir plus de détails sur l'analyse IA.
-10. Auteurs
+## 10. Auteur
 FILALI ANSARI MERYEM
-OULKIASS SALMA
-11. Licence
+## 11. Licence
 Ce projet est actuellement sans licence spécifiée. Veuillez ajouter un fichier LICENSE si vous souhaitez définir les termes d'utilisation et de distribution.
-
