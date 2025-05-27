@@ -18,6 +18,7 @@ sphinx:
 # Cela inclut les dépendances de votre projet et les dépendances de documentation (Sphinx, thèmes, parsers)
 python:
   install:
+    - requirements: docs/requirements.txt  # Spécifique à la doc
     - requirements: requirements.txt # Installe les dépendances de votre projet
     # Si vous avez des dépendances spécifiques pour la documentation (ex: sphinx, thèmes),
     # vous pouvez les lister ici ou les ajouter à requirements.txt
