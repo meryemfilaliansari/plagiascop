@@ -12,7 +12,7 @@ build:
 
 # Spécifie la configuration Sphinx
 sphinx:
-  configuration: docs/conf.py # Chemin vers votre fichier conf.py
+  configuration: docs/source/conf.py # Chemin vers votre fichier conf.py
 
 # Installe les dépendances nécessaires pour construire la documentation
 # Cela inclut les dépendances de votre projet et les dépendances de documentation (Sphinx, thèmes, parsers)
